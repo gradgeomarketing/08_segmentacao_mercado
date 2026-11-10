@@ -1,0 +1,520 @@
+---
+title: "Segmentação e Potencial de Mercado"
+subtitle: "Unidade 8 | Tópicos Especiais Mercadológicos: Geomarketing"
+author: "Prof.ª Renata Oliveira"
+date: "Novembro/Dezembro 2026"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    css: ["default", "ufcimg-slides.css", "zoom.css"]
+    includes:
+      after_body: zoom.html
+    nature:
+      ratio: "16:9"
+      highlightLines: true
+      highlightStyle: solarized-light
+      countIncrementalSlides: false
+      slideNumberFormat: |
+         <div class="progress-bar-container">
+           <div class="progress-bar" style="width: calc(%current% / %total% * 100%);">
+           </div>
+         </div>
+---
+
+```{r child = "setup.Rmd"}
+
+```
+
+```{r xaringan-tile-view, echo=FALSE}
+xaringanExtra::use_tile_view()
+```
+
+```{r xaringan-editable, echo=FALSE}
+xaringanExtra::use_editable(expires = 1)
+
+```
+
+```{r xaringanExtra-clipboard, echo=FALSE}
+htmltools::tagList(
+  xaringanExtra::use_clipboard(
+    button_text = "<i class=\"fa fa-clipboard\"></i>",
+    success_text = "<i class=\"fa fa-check\" style=\"color: #90BE6D\"></i>",
+    error_text = "<i class=\"fa fa-times-circle\" style=\"color: #F94144\"></i>"
+  ),
+  rmarkdown::html_dependency_font_awesome()
+)
+```
+
+```{r xaringan-fit-screen, echo=FALSE}
+xaringanExtra::use_fit_screen()
+
+```
+
+```{r xaringan-extra-styles, echo=FALSE}
+xaringanExtra::use_extra_styles(
+  hover_code_line = TRUE,         #<<
+  mute_unhighlighted_code = TRUE  #<<
+)
+```
+
+```{r xaringan-scribble, echo=FALSE}
+xaringanExtra::use_scribble()
+```
+
+---
+class: section-slide, center, middle
+
+# Segmentação e Potencial de Mercado
+
+.large[
+**Quem** compra, **onde** está, **quanto** consome
+e **o que** ainda não está sendo atendido.
+]
+
+---
+class: compact
+
+## Agenda — Unidade 8 (10h / 3 encontros)
+
+.pull-left[
+**Encontro 16 (4h)**
+- Segmentação territorial: conceito e variáveis
+- Indicadores socioeconômicos para geomarketing
+- Perfis territoriais e análise de cluster (k-means espacial)
+
+**Encontro 18 (2h)**
+- Apresentações dos projetos finais
+- Síntese da disciplina
+]
+
+.pull-right[
+**Encontro 17 (4h)**
+- Análise multicritério espacial e normalização de dados
+- Grade hexagonal padrão vs. setores e raster
+- QGIS: AMC em hexágonos (renda, população e locais candidatos)
+- Estimativa de demanda e fontes (RAIS, CAGED, CNPJ)
+]
+
+---
+class: compact
+
+## Segmentação Territorial
+
+**Segmentação territorial** combina variáveis espaciais e socioeconômicas para definir microterritórios com perfis homogêneos.
+
+.pull-left[
+**Variáveis clássicas:**
+- Renda domiciliar média
+- Perfil etário da população
+- Escolaridade do responsável
+- Densidade populacional
+- Tipo de uso do solo
+- Acesso a transporte
+]
+
+.pull-right[
+**Aplicações diretas:**
+- Priorização de territórios para expansão
+- Personalização de ofertas por bairro
+- Alocação de equipes de venda
+- Definição de público-alvo por CEP
+- Ajuste de preços por localidade
+]
+
+.tip[
+No Brasil, o **setor censitário** é a menor unidade territorial com dados oficiais — ideal para segmentação inframunicipal.
+]
+
+---
+class: compact
+
+## Indicadores Socioeconômicos — Obter e Carregar
+
+.your-turn[
+**Etapa 1 — Baixar e importar as bases por setor censitário (BH):**
+
+1. Baixar a malha de setores censitários 2022 do IBGE (shapefile) em *Downloads de Geociências* (ibge.gov.br) → "Malha de Setores Censitários" → Minas Gerais → Belo Horizonte
+2. Baixar a tabela "Agregados por Setores Censitários — Resultados do Universo" (renda, internet, escolaridade) em formato CSV, no mesmo portal
+3. *Camada → Adicionar Camada → Adicionar Camada Vetorial...* → selecionar o shapefile de setores censitários
+4. *Camada → Adicionar Camada → Adicionar Camada de Texto Delimitado...* → selecionar o CSV de renda (sem geometria, apenas atributos)
+]
+
+---
+class: compact
+
+## Indicadores Socioeconômicos — Unir Variáveis
+
+.your-turn[
+**Etapa 2 — Relacionar as variáveis na camada de setores (BH):**
+
+5. Caixa de Ferramentas Processing → **"Join attributes by field value"**:
+   - *Input layer* = setores; *Table field* = `CD_SETOR`
+   - *Input layer 2* = tabela de renda; *Table field 2* = `Cod_setor`
+   - *Join type* = *1:1 (um por um)* → Executar
+6. Repetir o passo 5 para as tabelas de internet e escolaridade, encadeando os joins na mesma camada de setores até reunir as 3 variáveis
+]
+
+---
+class: compact
+
+## Análise de Cluster Espacial (K-means)
+
+.your-turn[
+**Etapa 1 — Execução na Caixa de Ferramentas Processing:**
+
+1. Antes de agrupar, normalizar `renda`, `prop_internet` e `prop_sup` para a escala [0, 1] com a Calculadora de Campos (ver slides seguintes)
+2. Caixa de Ferramentas Processing → buscar **"K-means clustering"** (categoria *Análise Vetorial*)
+3. Parâmetros: *Input layer* = `setores_bh`; *Number of clusters* = 4 (testar de 3 a 6); *Output field name* = `CLUSTER`
+4. Executar → gera uma nova camada com o campo `CLUSTER` (1 a 4) atribuído a cada setor
+]
+
+.tip[
+**Atenção:** o algoritmo nativo do QGIS agrupa pela proximidade espacial dos centroides, não pelas variáveis socioeconômicas. Veja no próximo slide como reproduzir o k-means multivariado.
+]
+
+---
+class: compact
+
+## K-means Multivariado — Espaço das Variáveis
+
+.your-turn[
+**Etapa 2 — Agrupar por renda, internet e escolaridade:**
+
+5. Calculadora de Campos → criar os campos `eixo_x` = `renda_norm` e `eixo_y` = `prop_internet_norm` (combinando as variáveis normalizadas duas a duas)
+6. Processing → **"Create points layer from table"** usando `eixo_x`/`eixo_y` como coordenadas X/Y → gera uma camada de pontos no "espaço das variáveis" (não é um mapa geográfico)
+7. Rodar **"K-means clustering"** sobre essa camada de pontos-variáveis
+]
+
+---
+class: compact
+
+## K-means Multivariado — Retorno ao Mapa
+
+.your-turn[
+**Etapa 3 — Associar clusters de volta aos setores e simbolizar:**
+
+8. Processing → **"Join attributes by field value"** para trazer o campo `CLUSTER` de volta à camada geográfica original (`setores_bh`), usando um ID comum
+9. *Propriedades da Camada → Simbologia → Categorizado* → campo `CLUSTER` → paleta com 4 cores (`#002b36`, `#8fada7`, `#A7D5E8`, `#e9d968`) → renomear categorias como "Alta renda/digital", "Renda média", "Emergente", "Popular"
+]
+
+---
+class: compact
+
+## Perfis Territoriais — Estatísticas por Cluster
+
+.your-turn[
+**Passo a passo — Estatísticas por Cluster:**
+
+1. Caixa de Ferramentas Processing → buscar **"Statistics by categories"** (Estatísticas por categorias)
+2. Parâmetros: *Input layer* = `setores_bh`; *Categories field(s)* = `CLUSTER`; *Value field* = `renda` → Executar (repetir trocando o *Value field* para `prop_internet` e `prop_sup`)
+3. A tabela resultante traz, por cluster: contagem, soma, média, mínimo, máximo e desvio-padrão
+4. Atalho rápido: Tabela de Atributos → selecionar as feições de um cluster → *Ver → Painéis → Estatísticas Resumidas* → escolher o campo e a estatística (ex.: média)
+]
+
+---
+
+## Perfis Territoriais — Interpretação
+
+.pull-left[
+**Exemplo de resultado:**
+
+| Cluster | Renda | Internet | Superior |
+|---------|-------|----------|----------|
+| 1 | R$6.800 | 94% | 58% |
+| 2 | R$3.200 | 72% | 18% |
+| 3 | R$1.800 | 55% | 8% |
+| 4 | R$1.100 | 38% | 4% |
+]
+
+.pull-right[
+.question[
+**Análise:**
+
+- Cluster 1 → público premium
+- Cluster 3-4 → mercado popular
+- Qual cluster tem **mais potencial não atendido**?
+]
+]
+
+---
+class: compact
+
+## Análise Multicritério Espacial (AMC)
+
+**Análise Multicritério Espacial** integra diferentes dimensões do território (demanda, renda e oferta/infraestrutura) em um **índice síntese de decisão** para cada célula espacial:
+
+$$I_i = \sum_{k=1}^{m} w_k \cdot X'_{ik} \quad \text{com} \quad \sum_{k=1}^{m} w_k = 1$$
+
+.pull-left[
+**Por que usar Hexágonos Padrão?**
+- **Área uniforme:** corrige a distorção de tamanho dos setores censitários (MAUP)
+- **Vizinhança isótropa:** distância igual do centro para todos os 6 lados
+- **Vetor tabular:** opera direto na **Calculadora de Campos**, sem converter para raster
+]
+
+.pull-right[
+**Estrutura da decisão:**
+1. Definir a **unidade espacial** (hexágonos)
+2. Agregar os **critérios** por célula
+3. **Normalizar** para uma escala comum
+4. Aplicar **pesos ($w_k$)** e ranquear células
+]
+
+---
+class: compact
+
+## Normalização de Dados e Pesos
+
+Variáveis brutas têm unidades incompatíveis: **Renda** (R$), **População** (hab.) e **Locais candidatos** (contagem). Somá-las sem ajuste faria a maior grandeza dominar o índice.
+
+.pull-left[
+**Normalização Min–Max $[0, 1]$:**
+
+- **Critério de benefício** (quanto maior, melhor):
+$$X'_i = \frac{X_i - \min(X)}{\max(X) - \min(X)}$$
+
+- **Critério de custo** (quanto menor, melhor):
+$$X'_i = \frac{\max(X) - X_i}{\max(X) - \min(X)}$$
+]
+
+.pull-right[
+**Atribuição de Pesos ($w_k$):**
+- Traduz a **prioridade estratégica** do negócio ($w_{\text{renda}} + w_{\text{pop}} + w_{\text{locais}} = 1$)
+- Exemplo equilibrado: $0{,}35$ renda · $0{,}35$ população · $0{,}30$ locais candidatos
+- Deve ser validada com **análise de sensibilidade** (alterar pesos e comparar o ranking)
+]
+
+---
+class: compact
+
+## Atividade Prática AMC — Cenário e Bases
+
+.your-turn[
+**Objetivo:** Avaliar o potencial territorial em **hexágonos padrão** no QGIS, normalizando e ponderando **renda**, **população** e **número de locais candidatos**.
+
+**Camadas utilizadas (`05_dados_processados/`):**
+1. `04_censo2022_rmbh/municipios_rmbh_2022.shp` — recorte territorial (CRS `EPSG:31983`)
+2. `04_censo2022_rmbh/setores_censo2022_rmbh.shp` — setores censitários com `renda_med` e `pop_total`
+3. `02_locais_candidatos_rmbh/locais_candidatos_rmbh.shp` — pontos de locais candidatos (2.840 registros na RMBH)
+]
+
+.tip[
+**Atalho opcional:** a pasta `05_indicadores_hexagonos/indicadores_hexagonos.gpkg` já contém a grade pronta (`hex_dm_1000m`) caso queira ir direto para o **Passo 3**.
+]
+
+---
+class: compact
+
+## Passo 1 — Gerar a Grade de Hexágonos Padrão
+
+.your-turn[
+**Construindo as células hexagonais de 1 km no QGIS:**
+
+1. Adicionar os 3 shapefiles em *Camada → Adicionar Camada → Adicionar Camada Vetorial* (conferir se o projeto está em **SIRGAS 2000 / UTM 23S — EPSG:31983**)
+2. Abrir *Caixa de Ferramentas Processing → Vetor → Criação → **Criar grade (Create grid)***:
+   - *Tipo de grade:* **Hexágono (Polígono)**
+   - *Extensão da grade:* Calcular a partir da camada `municipios_rmbh_2022`
+   - *Espaçamento horizontal e vertical:* `1000` metros (1 km) | *SRC:* `EPSG:31983`
+3. Recortar para o limite de estudo: *Vetor → Geoprocessamento → **Recortar (Clip)*** (Entrada = Grade; Sobreposição = `municipios_rmbh_2022`) → salvar como `hexagonos_1km`
+]
+
+---
+class: compact
+
+## Passo 2 — Agregar as 3 Variáveis por Hexágono
+
+.your-turn[
+**Transferindo contagens de pontos e dados do Censo para cada célula:**
+
+1. **Número de locais candidatos (`n_candidatos`):**
+   - *Processing → Análise Vetorial → **Contar pontos no polígono (Count points in polygon)***
+   - Polígonos = `hexagonos_1km` | Pontos = `locais_candidatos_rmbh` | Nome do campo = `n_candidatos` → gera `hex_candidatos`
+2. **Renda média e População por hexágono:**
+   - *Processing → Geral do Vetor → **Unir atributos pela localização (resumo)***
+   - Camada base = `hex_candidatos` | Camada de junção = `setores_censo2022_rmbh` | Predicado = *intersecciona*
+   - Campos a resumir: `renda_med` e `pop_total` | Estatísticas: **Média (mean)** e **Soma (sum)** → gera a camada `hex_indicadores`
+]
+
+---
+class: compact
+
+## Passo 3 — Normalizar as Variáveis (Escala 0 a 1)
+
+.your-turn[
+**Na Calculadora de Campos (`F6` → ícone do ábaco), criar 3 campos *Decimal (real)*:**
+
+1. **Renda normalizada (`norm_renda`):**  
+   `("renda_med_mean" - minimum("renda_med_mean")) / (maximum("renda_med_mean") - minimum("renda_med_mean"))`
+2. **População normalizada (`norm_pop`):**  
+   `("pop_total_sum" - minimum("pop_total_sum")) / (maximum("pop_total_sum") - minimum("pop_total_sum"))`
+3. **Locais candidatos normalizados (`norm_cand`):**  
+   `("n_candidatos" - minimum("n_candidatos")) / (maximum("n_candidatos") - minimum("n_candidatos"))`
+]
+
+.tip[
+Se usar a camada pronta `hex_dm_1000m` (`indicadores_hexagonos.gpkg`), substitua os nomes dos campos por `"renda_media_areal"`, `"populacao_proporcional"` e `"n_candidatos"`.
+]
+
+---
+class: compact
+
+## Passo 4 — Atribuir Pesos e Mapear o Índice Final
+
+.your-turn[
+**Combinação linear ponderada e decisão locacional:**
+
+1. Na **Calculadora de Campos**, criar o campo `indice_amc` (Decimal, escala 0 a 100) aplicando os pesos (**0,35 Renda · 0,35 População · 0,30 Locais candidatos**):  
+   `100 * (0.35 * coalesce("norm_renda", 0) + 0.35 * coalesce("norm_pop", 0) + 0.30 * coalesce("norm_cand", 0))`
+2. **Simbologia:** *Propriedades → Simbologia → Graduado* → Coluna `indice_amc` → Modo **Quebras Naturais (Jenks)** em 5 classes
+3. **Priorização e Sensibilidade:** ordenar `indice_amc` na Tabela de Atributos para destacar o **Top 10 hexágonos** e criar `indice_cenario2` (pesos `0.20`, `0.30` e `0.50`) para comparar!
+]
+
+---
+class: compact
+
+## Estimativa de Demanda — Setores-Alvo
+
+.your-turn[
+**Etapa 1 — Filtrar setores e estimar população-alvo:**
+
+*Exemplo: clínica odontológica premium em BH — público-alvo 25-60 anos, renda > R$ 3.000*
+
+1. **Filtrar setores-alvo:** *Editar → Selecionar → Selecionar Feições por Expressão* →
+   `"renda" >= 3000 AND "cluster" IN (1, 2)`
+2. Com a seleção ativa: botão direito na camada → *Exportar → Salvar Feições Selecionadas Como...* → nova camada `setores_alvo`
+3. Calculadora de Campos em `setores_alvo` → criar `pop_adulta_est`: `"pop_setor" * 0.52` (≈52% têm 25-60 anos — estimativa)
+]
+
+---
+class: compact
+
+## Estimativa de Demanda — Potencial de Receita
+
+.your-turn[
+**Etapa 2 — Calcular clientes e receita potencial:**
+
+4. Criar campo `clientes_pot`: `"pop_adulta_est" * 0.08` (taxa de penetração de 8%)
+5. Criar campo `receita_pot`: `"clientes_pot" * 180 * 2.5` (ticket médio R$ 180, 2,5 consultas/ano)
+6. **Receita potencial total:** Tabela de Atributos → clicar no cabeçalho de `receita_pot` → *Ver → Painéis → Estatísticas Resumidas* → Estatística = *Soma*
+]
+
+---
+class: compact
+
+## Fontes de Dados — Como Importar no QGIS
+
+- **RAIS/CAGED** — empregos por setor CNAE e município: baixar CSV/planilha em portaldatransparencia.gov.br → *Camada → Adicionar Camada de Texto Delimitado* → **"Join attributes by field value"** com a camada de municípios pelo código IBGE
+- **Cadastro de Empresas Receita Federal (CNPJ)** — download em dados.gov.br (arquivo mensal, ~20GB comprimido); após tratar em planilha, adicionar como Camada de Texto Delimitado usando colunas de latitude/longitude, ou geocodificar o endereço com o plugin **MMQGIS** (ver Encontro 17)
+- **IBGE Cadastro Central de Empresas (CEMPRE)** — número de unidades locais por atividade e município: baixar a tabela do site do IBGE → mesma lógica de *Join attributes by field value* pelo código do município
+
+---
+
+## Fontes de Dados — Síntese e Granularidade
+
+| Dado | Fonte | Granularidade |
+|------|-------|--------------|
+| Renda/escolaridade | IBGE Censo 2022 | Setor censitário |
+| Empregos formais | RAIS | Município + CNAE |
+| Empresas ativas | CNPJ/RF | Endereço |
+| Massa salarial | CAGED | Município + mês |
+
+---
+class: compact
+
+## Atividade Final — Proposta e Escopo
+
+.your-turn[
+**Projeto Final — "Plano de Expansão Territorial"** *(individual ou dupla)*
+
+**Briefing:** Uma empresa do setor de sua escolha (varejo, serviços, saúde, educação) quer identificar onde abrir **2 novas unidades** em uma cidade brasileira.
+
+**Entregável — Parte 1 (apresentação 15 min + relatório 5 páginas):**
+
+1. **Definição do negócio e público-alvo territorial**
+2. **Base de dados:** fontes utilizadas, escala, limitações
+3. **Segmentação territorial:** clusters com perfis interpretados
+4. **Análise de concorrência:** mapeamento e gaps de cobertura
+]
+
+---
+class: compact
+
+## Atividade Final — Recomendações e Avaliação
+
+.your-turn[
+**Entregável — Parte 2:**
+
+5. **Índice multicritério:** variáveis, pesos e mapa resultante
+6. **Recomendação:** 2 localizações com justificativa espacial
+7. **Estimativa de demanda** para cada localização
+
+**Critérios de avaliação:**
+- Rigor técnico: **40%**
+- Qualidade cartográfica: **30%**
+- Argumentação: **30%**
+]
+
+---
+class: dense
+
+## Síntese da Disciplina
+
+.pull-left[
+**Jornada percorrida:**
+
+| Un. | Tema |
+|-----|------|
+| 1 | Fundamentos |
+| 2 | Espaço e Consumo |
+| 3 | Dados |
+| 4 | SIG |
+| 5 | Geocodificação |
+| 6 | Cartografia |
+| 7 | Análise Espacial |
+| 8 | Segmentação |
+]
+
+.pull-right[
+**O que o gestor territorial faz:**
+
+1. Define a **pergunta espacial**
+2. Coleta dados das **fontes certas**
+3. Geocodifica e **limpa** a base
+4. Analisa **padrões** com SIG
+5. Produz mapas que **comunicam**
+6. Recomenda com **evidência territorial**
+
+.tip[
+**Geomarketing não é sobre mapas bonitos — é sobre decisões melhores.**
+]
+]
+
+---
+
+## Conceitos-chave da Unidade 8
+
+.large[
+✅ **Segmentação territorial** = clusters de setores com perfis homogêneos
+
+✅ **K-means** classifica setores por variáveis socioeconômicas
+
+✅ **Análise multicritério** pondera variáveis para índice de potencial
+
+✅ **Estimativa de demanda** = pop. alvo × taxa de penetração × ticket
+
+✅ RAIS + CNPJ + Censo 2022 = tríade de dados para potencial de mercado
+]
+
+---
+
+## Referências
+
+- LONGLEY, P. A. et al. **Sistemas e ciência da informação geográfica**. 3. ed. Bookman, 2013.
+- KOTLER, P.; KELLER, K. L. **Administração de marketing**. 15. ed. Pearson, 2019. Cap. 8.
+- OLIVEIRA, P. H. P. de. **Geointeligência**. UICLAP, 2024.
+- SEBASTIÃO, A. **Geomarketing preditivo: comportamentos, antecipando necessidades**. Amazon, 2023.
+- ROCHA, M. D. A.; SOUSA, J. M. B. M. **Canais de distribuição e geomarketing**. Saraiva Uni, 2017.
+
+.footnote[
+[github.com/retaoliveira/geomarketing_08_segmentacao_mercado](https://github.com/retaoliveira/geomarketing_08_segmentacao_mercado)
+]
