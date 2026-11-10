@@ -195,6 +195,16 @@ img, video, iframe { max-width: 100%; }
   color: var(--ufcimg-dark);
 }
 
+.section-slide strong,
+.inverse strong {
+  color: var(--ufcimg-accent);
+}
+
+.section-slide blockquote strong,
+.inverse blockquote strong {
+  color: var(--ufcimg-primary);
+}
+
 /* Cabeçalho em faixa, compatível com class: header_background. */
 .remark-slide-content.header_background {
   padding-top: 145px;
